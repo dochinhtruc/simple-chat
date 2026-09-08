@@ -1,1 +1,1063 @@
+<!DOCTYPE html>
+<html lang="vi" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AnonChat - Ghép Đôi Ẩn Danh Ngẫu Nhiên</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#eef2ff',
+                            100: '#e0e7ff',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                        },
+                        dark: {
+                            bg: '#0b0f19',
+                            card: '#131b2e',
+                            border: '#1f293d',
+                            hover: '#1a233a',
+                        }
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'ping-slow': 'ping 2s cubic-bezier(0, 0, 0.2, 1) infinite',
+                        'bounce-short': 'bounceShort 0.6s infinite alternate',
+                    },
+                    keyframes: {
+                        bounceShort: {
+                            '0%': { transform: 'translateY(0)' },
+                            '100%': { transform: 'translateY(-4px)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 5px;
+            height: 5px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #28334e;
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #3b4869;
+        }
 
+        /* Glassmorphism helpers */
+        .glass-panel {
+            background: rgba(19, 27, 46, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.07);
+        }
+        .glass-header {
+            background: rgba(11, 15, 25, 0.88);
+            backdrop-filter: blur(14px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        /* Sonar radar wave animation */
+        .sonar-wave {
+            position: absolute;
+            border-radius: 50%;
+            border: 2px solid rgba(99, 102, 241, 0.4);
+            animation: sonar 2.4s cubic-bezier(0, 0.2, 0.8, 1) infinite;
+        }
+        .sonar-wave:nth-child(2) {
+            animation-delay: 0.8s;
+        }
+        .sonar-wave:nth-child(3) {
+            animation-delay: 1.6s;
+        }
+        @keyframes sonar {
+            0% { width: 40px; height: 40px; opacity: 1; transform: scale(1); }
+            100% { width: 280px; height: 280px; opacity: 0; transform: scale(1); }
+        }
+    </style>
+</head>
+<body class="bg-[#070b13] text-slate-100 min-h-screen flex flex-col antialiased select-none overflow-hidden">
+
+    <div id="lobby-view" class="flex-1 flex flex-col items-center justify-center p-4 sm:p-6 max-w-2xl mx-auto w-full relative z-10">
+        <!-- Top branding badge -->
+        <div class="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-indigo-950/70 border border-indigo-500/30 text-indigo-400 text-xs font-semibold mb-6 shadow-lg shadow-indigo-500/10">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span>Mạng ghép đôi trực tuyến • 100% Ẩn danh</span>
+        </div>
+
+        <!-- Hero text -->
+        <h1 class="text-3xl sm:text-5xl font-extrabold text-center tracking-tight text-white mb-3">
+            Trò Chuyện Với <br class="hidden sm:inline" />
+            <span class="bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400">
+                Người Lạ Ngẫu Nhiên
+            </span>
+        </h1>
+        <p class="text-slate-400 text-center text-sm sm:text-base max-w-md mb-8">
+            Kết nối tức thì với những người bạn mới. Không cần đăng ký, không lộ danh tính cá nhân, bảo mật và an toàn.
+        </p>
+
+        <!-- Topic selection card -->
+        <div class="w-full glass-panel rounded-2xl p-5 mb-6 shadow-2xl">
+            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3 flex items-center justify-between">
+                <span>Chọn chủ đề muốn trò chuyện</span>
+                <span class="text-[11px] text-indigo-400 font-normal">Ưu tiên ghép cùng sở thích</span>
+            </label>
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5" id="topic-container">
+                <button type="button" data-topic="Bất kỳ" class="topic-btn active px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-medium border flex items-center justify-center space-x-2 transition-all bg-indigo-600/30 border-indigo-500 text-white shadow-sm">
+                    <span>✨</span>
+                    <span>Bất kỳ</span>
+                </button>
+                <button type="button" data-topic="Chém gió" class="topic-btn px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-medium border border-slate-800 bg-slate-900/60 hover:bg-slate-800/80 text-slate-300 flex items-center justify-center space-x-2 transition-all">
+                    <span>☕</span>
+                    <span>Chém gió</span>
+                </button>
+                <button type="button" data-topic="Tâm sự" class="topic-btn px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-medium border border-slate-800 bg-slate-900/60 hover:bg-slate-800/80 text-slate-300 flex items-center justify-center space-x-2 transition-all">
+                    <span>🌙</span>
+                    <span>Tâm sự</span>
+                </button>
+                <button type="button" data-topic="Game thủ" class="topic-btn px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-medium border border-slate-800 bg-slate-900/60 hover:bg-slate-800/80 text-slate-300 flex items-center justify-center space-x-2 transition-all">
+                    <span>🎮</span>
+                    <span>Game thủ</span>
+                </button>
+                <button type="button" data-topic="Công nghệ" class="topic-btn px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-medium border border-slate-800 bg-slate-900/60 hover:bg-slate-800/80 text-slate-300 flex items-center justify-center space-x-2 transition-all">
+                    <span>💻</span>
+                    <span>Công nghệ</span>
+                </button>
+                <button type="button" data-topic="Âm nhạc" class="topic-btn px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-medium border border-slate-800 bg-slate-900/60 hover:bg-slate-800/80 text-slate-300 flex items-center justify-center space-x-2 transition-all">
+                    <span>🎧</span>
+                    <span>Âm nhạc</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Primary Match Actions -->
+        <div class="w-full flex flex-col sm:flex-row gap-3">
+            <button id="btn-start-search" class="flex-1 py-4 px-6 rounded-2xl bg-gradient-to-r from-indigo-500 via-indigo-600 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-bold text-base shadow-xl shadow-indigo-600/30 flex items-center justify-center space-x-3 transition-transform active:scale-[0.98]">
+                <svg class="w-5 h-5 animate-spin-slow" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                <span>Tìm Bạn Ngẫu Nhiên</span>
+            </button>
+            
+            <button id="btn-instant-bot" title="Thử nghiệm chat ngay với Người Lạ Ảo mô phỏng" class="py-4 px-5 rounded-2xl bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700 text-slate-200 font-semibold text-sm flex items-center justify-center space-x-2 transition-all">
+                <span>🤖</span>
+                <span>Thử với Bot</span>
+            </button>
+        </div>
+
+        <!-- Privacy & Tips footer -->
+        <div class="flex items-center justify-center space-x-6 text-xs text-slate-500 mt-6">
+            <span class="flex items-center space-x-1.5">
+                <svg class="w-3.5 h-3.5 text-emerald-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 1.944A11.954 11.954 0 012.166 5C2.056 5.649 2 6.319 2 7c0 5.225 3.34 9.67 8 11.317C14.66 16.67 18 12.225 18 7c0-.682-.057-1.35-.166-2.001A11.954 11.954 0 0110 1.944zM11 14a1 1 0 11-2 0 1 1 0 012 0zm0-7a1 1 0 10-2 0v3a1 1 0 102 0V7z" clip-rule="evenodd"></path></svg>
+                <span>Không lưu lịch sử</span>
+            </span>
+            <span>•</span>
+            <span class="flex items-center space-x-1.5">
+                <svg class="w-3.5 h-3.5 text-indigo-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"></path></svg>
+                <span>Mã hóa thời gian thực</span>
+            </span>
+            <span>•</span>
+            <span id="lobby-user-tag" class="text-slate-400">Đang chuẩn bị...</span>
+        </div>
+    </div>
+
+    <div id="searching-view" class="fixed inset-0 bg-[#070b13]/95 backdrop-blur-md z-40 hidden flex-col items-center justify-center p-6 text-center">
+        <!-- Sonar radar animation container -->
+        <div class="relative w-64 h-64 flex items-center justify-center mb-8">
+            <div class="sonar-wave"></div>
+            <div class="sonar-wave"></div>
+            <div class="sonar-wave"></div>
+            
+            <div class="w-24 h-24 rounded-full bg-gradient-to-tr from-indigo-600 to-purple-600 flex items-center justify-center shadow-2xl shadow-indigo-500/50 relative z-10 border-2 border-indigo-400/40">
+                <svg class="w-10 h-10 text-white animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+            </div>
+        </div>
+
+        <h2 class="text-2xl font-bold text-white mb-2 tracking-tight">Đang Tìm Kiếm Đối Phương...</h2>
+        <p class="text-slate-400 text-sm mb-2">Chủ đề: <span id="searching-topic-label" class="text-indigo-400 font-semibold">Bất kỳ</span></p>
+        <p class="text-xs text-slate-500 font-mono mb-8" id="searching-timer">Thời gian chờ: 00:00</p>
+
+        <div class="flex flex-col sm:flex-row gap-3 w-full max-w-xs">
+            <button id="btn-cancel-search" class="w-full py-3 px-6 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-sm transition-colors border border-slate-700">
+                Hủy Tìm Kiếm
+            </button>
+            <button id="btn-switch-to-bot" class="w-full py-3 px-6 rounded-xl bg-indigo-600/30 hover:bg-indigo-600/50 text-indigo-300 border border-indigo-500/40 font-semibold text-sm transition-colors">
+                Ghép với Bot ngay
+            </button>
+        </div>
+    </div>
+
+    <div id="chat-view" class="flex-1 flex flex-col h-screen max-w-4xl mx-auto w-full hidden overflow-hidden relative">
+        
+        <!-- Top App Header -->
+        <header class="glass-header px-4 py-3 flex items-center justify-between z-20 shrink-0">
+            <!-- Opponent info -->
+            <div class="flex items-center space-x-3">
+                <div class="relative">
+                    <div class="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 via-purple-600 to-pink-500 flex items-center justify-center text-white font-bold text-lg shadow-md border border-white/20">
+                        <span id="opponent-avatar-icon">🎭</span>
+                    </div>
+                    <span id="opponent-status-dot" class="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 border-2 border-[#0b0f19] rounded-full"></span>
+                </div>
+                <div>
+                    <div class="flex items-center space-x-2">
+                        <h2 class="font-bold text-slate-100 text-sm sm:text-base leading-tight" id="opponent-name">Người Lạ</h2>
+                        <span id="room-topic-badge" class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-slate-800 text-indigo-400 border border-slate-700">#BấtKỳ</span>
+                    </div>
+                    <p class="text-[11px] text-emerald-400 flex items-center space-x-1 mt-0.5" id="opponent-status-text">
+                        <span>Trực tuyến</span>
+                    </p>
+                </div>
+            </div>
+
+            <!-- Actions: Next / Leave -->
+            <div class="flex items-center space-x-2">
+                <button id="btn-next-partner" title="Đổi người khác (Alt + N)" class="px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-semibold text-xs sm:text-sm flex items-center space-x-1.5 transition-all shadow-md shadow-indigo-600/20">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+                    </svg>
+                    <span class="hidden xs:inline">Đổi Người</span>
+                </button>
+                <button id="btn-end-chat" title="Kết thúc cuộc trò chuyện" class="px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl bg-slate-800 hover:bg-rose-900/50 hover:border-rose-700 border border-slate-700 text-slate-300 hover:text-rose-300 font-semibold text-xs sm:text-sm flex items-center space-x-1 transition-all">
+                    <svg class="w-4 h-4 text-rose-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                    <span class="hidden sm:inline">Rời phòng</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Chat Stream Area -->
+        <main id="chat-messages" class="flex-1 overflow-y-auto p-4 sm:p-6 space-y-3.5 bg-[#080d18] relative flex flex-col">
+            <!-- Messages, timestamps and system notifications appended dynamically -->
+        </main>
+
+        <!-- Typing Indicator Strip -->
+        <div id="typing-indicator" class="px-4 py-1 text-xs text-slate-400 bg-[#080d18]/90 hidden items-center space-x-2 border-t border-slate-900">
+            <span class="inline-flex space-x-1">
+                <span class="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce"></span>
+                <span class="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce [animation-delay:0.2s]"></span>
+                <span class="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce [animation-delay:0.4s]"></span>
+            </span>
+            <span class="italic text-[11px] text-slate-400">Người Lạ đang gõ tin nhắn...</span>
+        </div>
+
+        <footer class="p-3 sm:p-4 bg-[#0c1220] border-t border-slate-800/80 shrink-0">
+            <!-- Quick emoji toolbar -->
+            <div class="flex items-center space-x-1.5 sm:space-x-2 mb-2 overflow-x-auto pb-1 text-base sm:text-lg">
+                <span class="text-xs text-slate-500 font-medium mr-1 hidden sm:inline">Thả biểu cảm:</span>
+                <button type="button" class="quick-emoji px-2 py-1 rounded-lg bg-slate-800/60 hover:bg-slate-700/80 transition-transform active:scale-95">😀</button>
+                <button type="button" class="quick-emoji px-2 py-1 rounded-lg bg-slate-800/60 hover:bg-slate-700/80 transition-transform active:scale-95">😂</button>
+                <button type="button" class="quick-emoji px-2 py-1 rounded-lg bg-slate-800/60 hover:bg-slate-700/80 transition-transform active:scale-95">👻</button>
+                <button type="button" class="quick-emoji px-2 py-1 rounded-lg bg-slate-800/60 hover:bg-slate-700/80 transition-transform active:scale-95">☕</button>
+                <button type="button" class="quick-emoji px-2 py-1 rounded-lg bg-slate-800/60 hover:bg-slate-700/80 transition-transform active:scale-95">👍</button>
+                <button type="button" class="quick-emoji px-2 py-1 rounded-lg bg-slate-800/60 hover:bg-slate-700/80 transition-transform active:scale-95">🔥</button>
+                <button type="button" class="quick-emoji px-2 py-1 rounded-lg bg-slate-800/60 hover:bg-slate-700/80 transition-transform active:scale-95">❤️</button>
+                <button type="button" class="quick-emoji px-2 py-1 rounded-lg bg-slate-800/60 hover:bg-slate-700/80 transition-transform active:scale-95">👋</button>
+            </div>
+
+            <!-- Message Form Input -->
+            <form id="chat-form" class="flex items-end space-x-2">
+                <div class="flex-1 bg-slate-900/90 rounded-2xl border border-slate-700/80 focus-within:border-indigo-500 transition-colors relative shadow-inner">
+                    <textarea 
+                        id="chat-input" 
+                        rows="1" 
+                        placeholder="Gửi tin nhắn ẩn danh... (Enter để gửi, Shift+Enter xuống dòng)" 
+                        class="w-full bg-transparent text-slate-100 placeholder-slate-500 py-3 px-4 text-sm sm:text-base outline-none resize-none max-h-32 min-h-[44px] rounded-2xl"
+                    ></textarea>
+                </div>
+                
+                <button 
+                    type="submit" 
+                    id="btn-send-message" 
+                    class="p-3 sm:px-5 sm:py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-semibold flex items-center justify-center transition-all shadow-lg shadow-indigo-600/30 disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                    <svg class="w-5 h-5 transform rotate-90" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
+                    </svg>
+                </button>
+            </form>
+        </footer>
+    </div>
+
+    <div id="custom-modal" class="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="glass-panel rounded-2xl max-w-sm w-full p-6 text-center shadow-2xl border border-slate-700">
+            <div id="modal-icon" class="w-12 h-12 mx-auto mb-3 rounded-full bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-2xl">
+                ⚠️
+            </div>
+            <h3 id="modal-title" class="text-lg font-bold text-white mb-2">Thông báo</h3>
+            <p id="modal-message" class="text-sm text-slate-300 mb-6">Nội dung thông báo...</p>
+            <div class="flex space-x-3 justify-center" id="modal-actions">
+                <button id="modal-btn-confirm" class="flex-1 py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm transition-colors">
+                    Đồng ý
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /* Web Audio API Sound Generator (No external dependencies, works 100% reliably) */
+        class SoundFX {
+            constructor() {
+                this.ctx = null;
+            }
+
+            init() {
+                if (!this.ctx) {
+                    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                    if (AudioCtx) this.ctx = new AudioCtx();
+                }
+                if (this.ctx && this.ctx.state === 'suspended') {
+                    this.ctx.resume();
+                }
+            }
+
+            playMatch() {
+                this.init();
+                if (!this.ctx) return;
+                const now = this.ctx.currentTime;
+                // Double chime (E5 -> B5)
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(659.25, now);
+                osc.frequency.exponentialRampToValueAtTime(987.77, now + 0.15);
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.4);
+            }
+
+            playMessagePop() {
+                this.init();
+                if (!this.ctx) return;
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(450, now);
+                osc.frequency.exponentialRampToValueAtTime(800, now + 0.08);
+                gain.gain.setValueAtTime(0.25, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.15);
+            }
+
+            playDisconnect() {
+                this.init();
+                if (!this.ctx) return;
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(320, now);
+                osc.frequency.exponentialRampToValueAtTime(140, now + 0.25);
+                gain.gain.setValueAtTime(0.15, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.25);
+            }
+        }
+        const sfx = new SoundFX();
+    </script>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { 
+            getFirestore, 
+            collection, 
+            doc, 
+            setDoc, 
+            getDoc, 
+            getDocs, 
+            updateDoc, 
+            deleteDoc, 
+            addDoc, 
+            onSnapshot 
+        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Environment configurations
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'anon-random-chat';
+        let firebaseConfig = null;
+        let initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        try {
+            if (typeof __firebase_config !== 'undefined') {
+                firebaseConfig = JSON.parse(__firebase_config);
+            }
+        } catch (e) {
+            console.error("Config parsing error:", e);
+        }
+
+        // Global State
+        let app = null, db = null, auth = null;
+        let currentUser = null;
+        let selectedTopic = 'Bất kỳ';
+        let currentRoomId = null;
+        let isBotMode = false;
+        let botTimer = null;
+        let searchTimerInterval = null;
+        let searchSeconds = 0;
+        let unsubscribeRoom = null;
+        let unsubscribeMessages = null;
+        let unsubscribeQueue = null;
+        let typingTimeout = null;
+
+        // Smart Bot Predefined Responses for Simulation
+        const BOT_PHRASES = {
+            greetings: [
+                "Chào bạn! Rất vui được ghép đôi với bạn 😊",
+                "Hế lô! Hôm nay của bạn thế nào?",
+                "Chào đằng ấy nhé! Bạn ở khu vực nào thế?",
+                "Hi bạn! Rất vui được trò chuyện ẩn danh với bạn hôm nay!"
+            ],
+            replies: [
+                "Thế á? Kể mình nghe thêm đi!",
+                "Haha đúng thật đấy, mình cũng có cảm giác như vậy luôn.",
+                "Thú vị ghê. Bạn có hay vào web này trò chuyện không?",
+                "Nghe hay ho đấy chứ! Mình đang vừa nghe nhạc vừa lướt web đây.",
+                "Chuẩn luôn bạn ơi! 💯",
+                "Ồ, bạn có sở thích gì vào thời gian rảnh không?",
+                "Thời tiết chỗ bạn hôm nay thế nào?",
+                "Mình hiểu rồi, cuộc sống đôi khi cần những lúc trò chuyện thoải mái như thế này."
+            ],
+            topicComments: {
+                'Game thủ': ["Dạo này bạn đang cày game gì thế? Mình thích mấy game coop vui vẻ!", "Có chơi Liên Quân hay Tốc Chiến không bạn ơi?"],
+                'Tâm sự': ["Cứ chia sẻ thoải mái nhé, mình ở đây lắng nghe bạn.", "Đôi khi nói chuyện với một người lạ hoàn toàn lại nhẹ lòng hơn bạn nhỉ."],
+                'Công nghệ': ["Bạn là dân lập trình, đồ họa hay chỉ đam mê công nghệ thôi?", "Dạo này công nghệ AI phát triển nhanh chóng mặt thật!"],
+                'Chém gió': ["Hôm nay có gì vui không bạn, kể mình nghe với nào!", "Cứ xả stress thoải mái đi người anh em ☕"]
+            }
+        };
+
+        // DOM Element references
+        const lobbyView = document.getElementById('lobby-view');
+        const searchingView = document.getElementById('searching-view');
+        const chatView = document.getElementById('chat-view');
+        const lobbyUserTag = document.getElementById('lobby-user-tag');
+        const topicBtns = document.querySelectorAll('.topic-btn');
+        const btnStartSearch = document.getElementById('btn-start-search');
+        const btnInstantBot = document.getElementById('btn-instant-bot');
+        const btnCancelSearch = document.getElementById('btn-cancel-search');
+        const btnSwitchToBot = document.getElementById('btn-switch-to-bot');
+        const searchingTopicLabel = document.getElementById('searching-topic-label');
+        const searchingTimer = document.getElementById('searching-timer');
+        const chatMessages = document.getElementById('chat-messages');
+        const chatForm = document.getElementById('chat-form');
+        const chatInput = document.getElementById('chat-input');
+        const typingIndicator = document.getElementById('typing-indicator');
+        const opponentName = document.getElementById('opponent-name');
+        const opponentStatusDot = document.getElementById('opponent-status-dot');
+        const opponentStatusText = document.getElementById('opponent-status-text');
+        const opponentAvatarIcon = document.getElementById('opponent-avatar-icon');
+        const roomTopicBadge = document.getElementById('room-topic-badge');
+        const btnNextPartner = document.getElementById('btn-next-partner');
+        const btnEndChat = document.getElementById('btn-end-chat');
+        const quickEmojis = document.querySelectorAll('.quick-emoji');
+
+        async function initialize() {
+            if (!firebaseConfig) {
+                lobbyUserTag.innerText = "Chế độ mô phỏng offline (Bot khả dụng)";
+                console.warn("Chưa có cấu hình Firebase, tự động hỗ trợ chế độ mô phỏng.");
+                return;
+            }
+
+            try {
+                app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+
+                // Authentication (Rule 3: Custom token first, then fallback anonymous)
+                let userCred;
+                if (initialAuthToken) {
+                    userCred = await signInWithCustomToken(auth, initialAuthToken);
+                } else {
+                    userCred = await signInAnonymously(auth);
+                }
+                currentUser = userCred.user;
+                lobbyUserTag.innerText = `ID của bạn: ${currentUser.uid.substring(0, 6)}...`;
+            } catch (err) {
+                console.error("Firebase auth error:", err);
+                lobbyUserTag.innerText = "Lỗi kết nối Firebase (Dùng chế độ Bot)";
+            }
+        }
+
+        // Topic select handlers
+        topicBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                topicBtns.forEach(b => {
+                    b.classList.remove('bg-indigo-600/30', 'border-indigo-500', 'text-white', 'shadow-sm');
+                    b.classList.add('border-slate-800', 'bg-slate-900/60', 'text-slate-300');
+                });
+                btn.classList.remove('border-slate-800', 'bg-slate-900/60', 'text-slate-300');
+                btn.classList.add('bg-indigo-600/30', 'border-indigo-500', 'text-white', 'shadow-sm');
+                selectedTopic = btn.getAttribute('data-topic');
+            });
+        });
+
+        // Quick Emoji Click Handler
+        quickEmojis.forEach(btn => {
+            btn.addEventListener('click', () => {
+                chatInput.value += btn.innerText;
+                chatInput.focus();
+            });
+        });
+
+        btnStartSearch.addEventListener('click', () => {
+            sfx.init();
+            startMatchmaking();
+        });
+
+        btnInstantBot.addEventListener('click', () => {
+            sfx.init();
+            startBotChat(selectedTopic);
+        });
+
+        btnSwitchToBot.addEventListener('click', () => {
+            cancelMatchmaking();
+            startBotChat(selectedTopic);
+        });
+
+        btnCancelSearch.addEventListener('click', () => {
+            cancelMatchmaking();
+            showLobby();
+        });
+
+        function startMatchmaking() {
+            if (!currentUser || !db) {
+                // Fallback to bot if Firebase not configured
+                startBotChat(selectedTopic);
+                return;
+            }
+
+            lobbyView.classList.add('hidden');
+            chatView.classList.add('hidden');
+            searchingView.classList.remove('hidden');
+            searchingView.classList.add('flex');
+
+            searchingTopicLabel.innerText = selectedTopic;
+            searchSeconds = 0;
+            searchingTimer.innerText = "Thời gian chờ: 00:00";
+            
+            clearInterval(searchTimerInterval);
+            searchTimerInterval = setInterval(() => {
+                searchSeconds++;
+                const mins = String(Math.floor(searchSeconds / 60)).padStart(2, '0');
+                const secs = String(searchSeconds % 60).padStart(2, '0');
+                searchingTimer.innerText = `Thời gian chờ: ${mins}:${secs}`;
+                
+                // If waiting for more than 10 seconds, suggest switching to bot
+                if (searchSeconds === 8) {
+                    btnSwitchToBot.classList.add('animate-bounce');
+                }
+            }, 1000);
+
+            enterQueue();
+        }
+
+        async function enterQueue() {
+            if (!currentUser || !db) return;
+
+            const myUid = currentUser.uid;
+            // Rule 1: artifacts/{appId}/public/data/{collectionName}
+            const queueCol = collection(db, 'artifacts', appId, 'public', 'data', 'match_queue');
+
+            try {
+                // Query all waiting peers in queue (Rule 2: simple collection query, filter in JS)
+                const snapshot = await getDocs(queueCol);
+                let matchedCandidate = null;
+
+                snapshot.forEach(docSnap => {
+                    const data = docSnap.data();
+                    // Must be waiting, not self, and active in the last 2 minutes
+                    if (data.userId !== myUid && data.status === 'waiting' && (Date.now() - data.timestamp < 120000)) {
+                        // Priority for matching topic or 'Bất kỳ'
+                        if (data.topic === selectedTopic || selectedTopic === 'Bất kỳ' || data.topic === 'Bất kỳ') {
+                            matchedCandidate = { id: docSnap.id, ...data };
+                        }
+                    }
+                });
+
+                if (matchedCandidate) {
+                    // We found a peer waiting! Create room
+                    const roomId = `room_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+                    const roomDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', roomId);
+
+                    await setDoc(roomDocRef, {
+                        roomId: roomId,
+                        userA: matchedCandidate.userId,
+                        userB: myUid,
+                        topic: selectedTopic !== 'Bất kỳ' ? selectedTopic : matchedCandidate.topic,
+                        active: true,
+                        endedBy: null,
+                        createdAt: Date.now(),
+                        typing: { [myUid]: false, [matchedCandidate.userId]: false }
+                    });
+
+                    // Update candidate doc to notify them
+                    const candidateDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'match_queue', matchedCandidate.id);
+                    await updateDoc(candidateDocRef, {
+                        status: 'matched',
+                        roomId: roomId
+                    });
+
+                    // Join the room ourselves
+                    joinRoom(roomId, false, selectedTopic);
+                } else {
+                    // No candidate yet, put ourselves in queue
+                    const myQueueDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'match_queue', myUid);
+                    await setDoc(myQueueDocRef, {
+                        userId: myUid,
+                        topic: selectedTopic,
+                        timestamp: Date.now(),
+                        status: 'waiting',
+                        roomId: null
+                    });
+
+                    // Listen to our queue doc for another user pairing with us
+                    unsubscribeQueue = onSnapshot(myQueueDocRef, (docSnap) => {
+                        if (docSnap.exists()) {
+                            const data = docSnap.data();
+                            if (data.status === 'matched' && data.roomId) {
+                                // Another user paired with us!
+                                joinRoom(data.roomId, false, data.topic || selectedTopic);
+                            }
+                        }
+                    }, (err) => console.error("Queue listener error:", err));
+                }
+
+            } catch (err) {
+                console.error("Matchmaking error:", err);
+            }
+        }
+
+        async function cancelMatchmaking() {
+            clearInterval(searchTimerInterval);
+            if (unsubscribeQueue) {
+                unsubscribeQueue();
+                unsubscribeQueue = null;
+            }
+            if (currentUser && db) {
+                try {
+                    const myQueueDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'match_queue', currentUser.uid);
+                    await deleteDoc(myQueueDocRef);
+                } catch (e) {
+                    console.log("Cleanup queue err:", e);
+                }
+            }
+        }
+
+        async function joinRoom(roomId, isSimulatedBot = false, topicName = 'Bất kỳ') {
+            clearInterval(searchTimerInterval);
+            if (unsubscribeQueue) {
+                unsubscribeQueue();
+                unsubscribeQueue = null;
+            }
+
+            currentRoomId = roomId;
+            isBotMode = isSimulatedBot;
+
+            // Update UI views
+            searchingView.classList.add('hidden');
+            lobbyView.classList.add('hidden');
+            chatView.classList.remove('hidden');
+
+            chatMessages.innerHTML = '';
+            roomTopicBadge.innerText = `#${topicName}`;
+            opponentName.innerText = isSimulatedBot ? "Người Lạ (AI)" : "Người Lạ";
+            opponentAvatarIcon.innerText = isSimulatedBot ? "🤖" : "🎭";
+            opponentStatusDot.className = "absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 border-2 border-[#0b0f19] rounded-full";
+            opponentStatusText.innerHTML = `<span class="text-emerald-400">Trực tuyến</span>`;
+            
+            sfx.playMatch();
+
+            // Insert system greeting announcement
+            appendSystemNotice(`🎉 Đã kết nối với Người Lạ! Cả hai đang cùng trong chủ đề #${topicName}.`);
+            appendSystemNotice(`⚠️ Luôn giữ lịch sự, không chia sẻ mật khẩu hay thông tin riêng tư nhạy cảm.`);
+
+            if (isSimulatedBot) {
+                setupBotConversation(topicName);
+            } else {
+                setupRealRoomListeners(roomId);
+            }
+
+            chatInput.disabled = false;
+            chatInput.focus();
+        }
+
+        function setupRealRoomListeners(roomId) {
+            if (!db || !currentUser) return;
+            const myUid = currentUser.uid;
+
+            // 1. Listen to Room document status (typing status & end room)
+            const roomDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', roomId);
+            unsubscribeRoom = onSnapshot(roomDocRef, (docSnap) => {
+                if (!docSnap.exists()) return;
+                const roomData = docSnap.data();
+
+                // Check if opponent ended chat
+                if (!roomData.active && roomData.endedBy && roomData.endedBy !== myUid) {
+                    handleOpponentLeft();
+                    return;
+                }
+
+                // Check typing indicator for opponent
+                if (roomData.typing) {
+                    const opponentUid = roomData.userA === myUid ? roomData.userB : roomData.userA;
+                    if (roomData.typing[opponentUid]) {
+                        typingIndicator.classList.remove('hidden');
+                        typingIndicator.classList.add('flex');
+                    } else {
+                        typingIndicator.classList.add('hidden');
+                        typingIndicator.classList.remove('flex');
+                    }
+                }
+            }, (err) => console.error("Room snapshot error:", err));
+
+            // 2. Listen to Room Messages (Rule 1 & Rule 2 compliant)
+            const messagesColRef = collection(db, 'artifacts', appId, 'public', 'data', `room_msgs_${roomId}`);
+            unsubscribeMessages = onSnapshot(messagesColRef, (snapshot) => {
+                const list = [];
+                snapshot.forEach(d => list.push({ id: d.id, ...d.data() }));
+
+                // Sort in memory by timestamp (Rule 2)
+                list.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+
+                renderMessagesList(list);
+            }, (err) => console.error("Messages listener error:", err));
+        }
+
+        let renderedMsgIds = new Set();
+
+        function renderMessagesList(messages) {
+            const myUid = currentUser ? currentUser.uid : 'me';
+
+            messages.forEach(msg => {
+                if (!renderedMsgIds.has(msg.id)) {
+                    renderedMsgIds.add(msg.id);
+                    const isMe = msg.senderId === myUid;
+                    appendMessageBubble(msg.text, isMe, msg.timestamp);
+                    if (!isMe) {
+                        sfx.playMessagePop();
+                    }
+                }
+            });
+
+            scrollToBottom();
+        }
+
+        function appendMessageBubble(text, isMe, timestamp = Date.now()) {
+            const timeStr = new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+            const row = document.createElement('div');
+            row.className = `flex w-full ${isMe ? 'justify-end' : 'justify-start'} animate-fade-in`;
+
+            const bubble = document.createElement('div');
+            bubble.className = `max-w-[85%] sm:max-w-[70%] rounded-2xl px-4 py-2.5 shadow-sm break-words relative text-sm sm:text-base leading-relaxed ${
+                isMe 
+                    ? 'bg-gradient-to-r from-indigo-600 to-indigo-700 text-white rounded-tr-xs' 
+                    : 'bg-[#151f36] border border-slate-700/60 text-slate-200 rounded-tl-xs'
+            }`;
+
+            bubble.innerHTML = `
+                <p class="whitespace-pre-wrap">${escapeHTML(text)}</p>
+                <div class="text-[10px] text-right mt-1 opacity-60 font-mono tracking-tight">${timeStr}</div>
+            `;
+
+            row.appendChild(bubble);
+            chatMessages.appendChild(row);
+            scrollToBottom();
+        }
+
+        function appendSystemNotice(text) {
+            const notice = document.createElement('div');
+            notice.className = "flex justify-center my-2";
+            notice.innerHTML = `
+                <div class="px-3.5 py-1.5 rounded-full bg-slate-900/80 border border-slate-800 text-[11px] sm:text-xs text-slate-400 max-w-md text-center shadow-sm">
+                    ${text}
+                </div>
+            `;
+            chatMessages.appendChild(notice);
+            scrollToBottom();
+        }
+
+        function scrollToBottom() {
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        chatForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            sendMessage();
+        });
+
+        // Auto resize textarea & enter key to send
+        chatInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        chatInput.addEventListener('input', () => {
+            chatInput.style.height = 'auto';
+            chatInput.style.height = (chatInput.scrollHeight) + 'px';
+            handleTypingNotification();
+        });
+
+        async function sendMessage() {
+            const text = chatInput.value.trim();
+            if (!text) return;
+
+            chatInput.value = '';
+            chatInput.style.height = 'auto';
+
+            if (isBotMode) {
+                // Bot Chat Simulation
+                appendMessageBubble(text, true);
+                triggerBotReply(text);
+                return;
+            }
+
+            if (!db || !currentUser || !currentRoomId) return;
+
+            try {
+                const messagesColRef = collection(db, 'artifacts', appId, 'public', 'data', `room_msgs_${currentRoomId}`);
+                await addDoc(messagesColRef, {
+                    text: text,
+                    senderId: currentUser.uid,
+                    timestamp: Date.now()
+                });
+
+                // Clear typing status
+                setTypingStatus(false);
+            } catch (err) {
+                console.error("Lỗi gửi tin nhắn:", err);
+            }
+        }
+
+        function handleTypingNotification() {
+            if (isBotMode || !db || !currentUser || !currentRoomId) return;
+
+            setTypingStatus(true);
+            clearTimeout(typingTimeout);
+            typingTimeout = setTimeout(() => {
+                setTypingStatus(false);
+            }, 1800);
+        }
+
+        async function setTypingStatus(isTyping) {
+            if (!db || !currentUser || !currentRoomId) return;
+            try {
+                const roomDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', currentRoomId);
+                await updateDoc(roomDocRef, {
+                    [`typing.${currentUser.uid}`]: isTyping
+                });
+            } catch (e) {
+                // Ignore silent typing error
+            }
+        }
+
+        btnNextPartner.addEventListener('click', () => {
+            showModal(
+                "Đổi người khác?", 
+                "Bạn có chắc muốn ngắt kết nối với người này và tìm ngay người mới không?",
+                "Tiếp tục",
+                () => {
+                    disconnectCurrentChat(true);
+                }
+            );
+        });
+
+        btnEndChat.addEventListener('click', () => {
+            showModal(
+                "Kết thúc cuộc trò chuyện?", 
+                "Bạn sẽ rời phòng và trở về màn hình sảnh.",
+                "Rời phòng",
+                () => {
+                    disconnectCurrentChat(false);
+                }
+            );
+        });
+
+        async function disconnectCurrentChat(findNext = false) {
+            sfx.playDisconnect();
+
+            if (!isBotMode && currentRoomId && db && currentUser) {
+                try {
+                    const roomDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', currentRoomId);
+                    await updateDoc(roomDocRef, {
+                        active: false,
+                        endedBy: currentUser.uid
+                    });
+                } catch (e) {
+                    console.log("Disconnect doc update err:", e);
+                }
+            }
+
+            cleanupListeners();
+
+            if (findNext) {
+                startMatchmaking();
+            } else {
+                showLobby();
+            }
+        }
+
+        function handleOpponentLeft() {
+            sfx.playDisconnect();
+            opponentStatusDot.className = "absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-rose-500 border-2 border-[#0b0f19] rounded-full";
+            opponentStatusText.innerHTML = `<span class="text-rose-400 font-medium">Đã ngắt kết nối</span>`;
+            chatInput.disabled = true;
+            appendSystemNotice("❌ Người Lạ đã rời khỏi cuộc trò chuyện.");
+        }
+
+        function cleanupListeners() {
+            if (unsubscribeRoom) { unsubscribeRoom(); unsubscribeRoom = null; }
+            if (unsubscribeMessages) { unsubscribeMessages(); unsubscribeMessages = null; }
+            if (botTimer) { clearTimeout(botTimer); botTimer = null; }
+            renderedMsgIds.clear();
+            currentRoomId = null;
+        }
+
+        function showLobby() {
+            cleanupListeners();
+            cancelMatchmaking();
+            chatView.classList.add('hidden');
+            searchingView.classList.add('hidden');
+            lobbyView.classList.remove('hidden');
+        }
+
+        function startBotChat(topic) {
+            joinRoom('bot_simulated_room', true, topic);
+        }
+
+        function setupBotConversation(topic) {
+            typingIndicator.classList.remove('hidden');
+            typingIndicator.classList.add('flex');
+
+            botTimer = setTimeout(() => {
+                typingIndicator.classList.add('hidden');
+                typingIndicator.classList.remove('flex');
+                
+                let greeting = BOT_PHRASES.greetings[Math.floor(Math.random() * BOT_PHRASES.greetings.length)];
+                if (BOT_PHRASES.topicComments[topic]) {
+                    greeting += " " + BOT_PHRASES.topicComments[topic][0];
+                }
+                appendMessageBubble(greeting, false);
+                sfx.playMessagePop();
+            }, 1400);
+        }
+
+        function triggerBotReply(userText) {
+            typingIndicator.classList.remove('hidden');
+            typingIndicator.classList.add('flex');
+
+            // Realistic random typing delay based on message length
+            const delay = Math.min(3200, Math.max(1200, userText.length * 50 + 600));
+
+            botTimer = setTimeout(() => {
+                typingIndicator.classList.add('hidden');
+                typingIndicator.classList.remove('flex');
+
+                let reply = "";
+                const lower = userText.toLowerCase();
+
+                if (lower.includes("chào") || lower.includes("hi") || lower.includes("hello")) {
+                    reply = "Chào bạn! Tối nay bạn có rảnh không?";
+                } else if (lower.includes("tên") || lower.includes("ai")) {
+                    reply = "Chúng mình đều là ẩn danh mà hehe! Cứ gọi mình là Người Lạ nhé 👻";
+                } else if (lower.includes("ở đâu") || lower.includes("quê")) {
+                    reply = "Mình ở một góc nhỏ tại Việt Nam. Còn bạn thì sao?";
+                } else if (lower.includes("game") || lower.includes("chơi")) {
+                    reply = "Mình cũng hay chơi game giải trí sau giờ học và làm việc nè!";
+                } else {
+                    reply = BOT_PHRASES.replies[Math.floor(Math.random() * BOT_PHRASES.replies.length)];
+                }
+
+                appendMessageBubble(reply, false);
+                sfx.playMessagePop();
+            }, delay);
+        }
+
+        function showModal(title, message, confirmText, onConfirm) {
+            const modal = document.getElementById('custom-modal');
+            const modalTitle = document.getElementById('modal-title');
+            const modalMessage = document.getElementById('modal-message');
+            const actionsContainer = document.getElementById('modal-actions');
+
+            modalTitle.innerText = title;
+            modalMessage.innerText = message;
+            actionsContainer.innerHTML = '';
+
+            const btnCancel = document.createElement('button');
+            btnCancel.className = "flex-1 py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-sm transition-colors";
+            btnCancel.innerText = "Hủy bỏ";
+            btnCancel.onclick = () => modal.classList.add('hidden');
+
+            const btnConfirm = document.createElement('button');
+            btnConfirm.className = "flex-1 py-2.5 px-4 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-semibold text-sm transition-colors";
+            btnConfirm.innerText = confirmText;
+            btnConfirm.onclick = () => {
+                modal.classList.add('hidden');
+                if (onConfirm) onConfirm();
+            };
+
+            actionsContainer.appendChild(btnCancel);
+            actionsContainer.appendChild(btnConfirm);
+            modal.classList.remove('hidden');
+        }
+
+        function escapeHTML(str) {
+            return str.replace(/[&<>'"]/g, 
+                tag => ({
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    "'": '&#39;',
+                    '"': '&quot;'
+                }[tag] || tag)
+            );
+        }
+
+        // Keyboard shortcuts: Esc to leave/cancel
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                if (!searchingView.classList.contains('hidden')) {
+                    cancelMatchmaking();
+                    showLobby();
+                }
+            }
+        });
+
+        // Initialize upon window load
+        window.addEventListener('DOMContentLoaded', initialize);
+    </script>
+</body>
+</html>
